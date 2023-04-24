@@ -1,7 +1,7 @@
 import numpy as np
 from torch.utils.data import Dataset
 
-from genie.utils.data_io import load_coord
+from genies.utils.data_io import load_coord
 
 
 class SCOPeDataset(Dataset):

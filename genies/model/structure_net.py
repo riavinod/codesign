@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 
-from genie.model.modules.invariant_point_attention import InvariantPointAttention
-from genie.model.modules.structure_transition import StructureTransition
-from genie.model.modules.backbone_update import BackboneUpdate
+from genies.model.modules.invariant_point_attention import InvariantPointAttention
+from genies.model.modules.structure_transition import StructureTransition
+from genies.model.modules.backbone_update import BackboneUpdate
 
 
 class StructureLayer(nn.Module):

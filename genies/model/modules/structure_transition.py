@@ -16,7 +16,7 @@
 
 import torch.nn as nn
 
-from genie.model.modules.primitives import Linear
+from genies.model.modules.primitives import Linear
 
 
 class StructureTransitionLayer(nn.Module):

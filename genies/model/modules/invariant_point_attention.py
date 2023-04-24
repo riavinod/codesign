@@ -18,9 +18,9 @@ import math
 import torch
 import torch.nn as nn
 
-from genie.model.modules.primitives import Linear, ipa_point_weights_init_
-from genie.utils.affine_utils import T
-from genie.utils.tensor_utils import (
+from genies.model.modules.primitives import Linear, ipa_point_weights_init_
+from genies.utils.affine_utils import T
+from genies.utils.tensor_utils import (
     permute_final_dims, 
     flatten_final_dims,
 )

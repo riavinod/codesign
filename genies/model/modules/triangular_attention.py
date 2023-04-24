@@ -19,8 +19,8 @@ import math
 import torch
 import torch.nn as nn
 
-from genie.model.modules.primitives import Linear, Attention
-from genie.utils.tensor_utils import (
+from genies.model.modules.primitives import Linear, Attention
+from genies.utils.tensor_utils import (
     chunk_layer, 
     permute_final_dims, 
     flatten_final_dims,

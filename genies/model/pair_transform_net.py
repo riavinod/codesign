@@ -1,15 +1,15 @@
 from torch import nn
 
-from genie.model.modules.pair_transition import PairTransition
-from genie.model.modules.triangular_attention import (
+from genies.model.modules.pair_transition import PairTransition
+from genies.model.modules.triangular_attention import (
 	TriangleAttentionStartingNode,
 	TriangleAttentionEndingNode,
 )
-from genie.model.modules.triangular_multiplicative_update import (
+from genies.model.modules.triangular_multiplicative_update import (
 	TriangleMultiplicationOutgoing,
 	TriangleMultiplicationIncoming,
 )
-from genie.model.modules.dropout import (
+from genies.model.modules.dropout import (
 	DropoutRowwise,
 	DropoutColumnwise
 )

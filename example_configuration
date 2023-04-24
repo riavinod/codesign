@@ -1,7 +1,9 @@
-name scope_l_128_p_5
+name scope_l_256_p_5
 numEpoches 10000
 batchSize 4
-maximumNumResidues 128
+maximumNumResidues 256
 logEverySteps 1000
-checkpointEveryEpoches 10000
+checkpointEveryEpoches 100
 learningRate 1e-4
+dataDirectory /home/kevyan/src/genies/data
+logDirectory /home/kevyan/src/genies/runs

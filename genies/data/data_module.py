@@ -1,16 +1,14 @@
 import os
 import glob
 from torch.utils.data import DataLoader
-from pytorch_lightning import LightningDataModule
 
-from genie.data.dataset import SCOPeDataset
-from genie.utils.data_io import load_filepaths
+from genies.data.dataset import SCOPeDataset
+from genies.utils.data_io import load_filepaths
 
 
-class SCOPeDataModule(LightningDataModule):
+class SCOPeDataModule(object):
 
 	def __init__(self, name, log_dir, data_dir, max_n_res, min_n_res, dataset_names, dataset_size, dataset_classes, batch_size):
-		super(SCOPeDataModule, self).__init__()
 
 		self.name = name
 		self.log_dir = log_dir
@@ -21,6 +19,7 @@ class SCOPeDataModule(LightningDataModule):
 		self.dataset_size = dataset_size
 		self.dataset_classes = dataset_classes
 		self.batch_size = batch_size
+		self.setup()
 
 	def setup(self, stage=None):
 
@@ -31,6 +30,8 @@ class SCOPeDataModule(LightningDataModule):
 				filepaths = [line.strip() for line in file]
 		else:
 			filepaths = load_filepaths(self.data_dir, self.dataset_names, self.max_n_res, self.min_n_res, self.dataset_classes, self.dataset_size)
+			if not os.path.exists(os.path.join(self.log_dir, self.name)):
+				os.makedirs(os.path.join(self.log_dir, self.name))
 			with open(dataset_filepath, 'w') as file:
 				for filepath in filepaths:
 					file.write(filepath + '\n')
@@ -40,4 +41,4 @@ class SCOPeDataModule(LightningDataModule):
 		print(f'Number of samples: {len(filepaths)}')
 
 	def train_dataloader(self):
-		return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+		return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=1)

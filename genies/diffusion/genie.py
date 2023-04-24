@@ -1,13 +1,23 @@
 import torch
 
-from genie.diffusion.diffusion import Diffusion
-from genie.diffusion.schedule import get_betas
-from genie.utils.loss import rmsd
-from genie.utils.affine_utils import T
-from genie.utils.geo_utils import compute_frenet_frames
+from genies.diffusion.diffusion import Diffusion
+from genies.diffusion.schedule import get_betas
+from genies.utils.loss import rmsd
+from genies.utils.affine_utils import T
+from genies.utils.geo_utils import compute_frenet_frames
 
 
-class Genie(Diffusion):
+class Genies(Diffusion):
+
+	def __init__(self, config):
+		super(Genies, self).__init__(config)
+		self.device = torch.device('cpu')
+		self.setup_schedule()
+		self.setup = True
+
+	def to(self, *args, **kwargs):
+		super(Genies, self).to(*args, **kwargs)
+		self.device = self.model.single_feature_net.linear.bias.device
 
 	def setup_schedule(self):
 
@@ -17,7 +27,7 @@ class Genie(Diffusion):
 		self.alphas_cumprod_prev = torch.cat([torch.Tensor([1.]).to(self.device), self.alphas_cumprod[:-1]])
 		self.one_minus_alphas_cumprod = 1. - self.alphas_cumprod
 		self.one_minus_alphas_cumprod_prev = 1. - self.alphas_cumprod_prev
-		
+
 		self.sqrt_betas = torch.sqrt(self.betas)
 		self.sqrt_alphas = torch.sqrt(self.alphas)
 		self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
@@ -58,15 +68,15 @@ class Genie(Diffusion):
 		rots_noise = torch.eye(3).view(1, 1, 3, 3).repeat(t0.shape[0], t0.shape[1], 1, 1).to(self.device)
 
 		trans = self.sqrt_alphas_cumprod[s].view(-1, 1, 1).to(self.device) * t0.trans + \
-			self.sqrt_one_minus_alphas_cumprod[s].view(-1, 1, 1).to(self.device) * trans_noise
+				self.sqrt_one_minus_alphas_cumprod[s].view(-1, 1, 1).to(self.device) * trans_noise
 		rots = compute_frenet_frames(trans, mask)
 
 		return T(rots, trans), T(rots_noise, trans_noise)
 
 	def p(self, ts, s, mask):
 
-		# [b, 1, 1]
-		w_noise = ((1. - self.alphas[s].to(self.device)) / self.sqrt_one_minus_alphas_cumprod[s].to(self.device)).view(-1, 1, 1)
+		w_noise = ((1. - self.alphas[s].to(self.device)) / self.sqrt_one_minus_alphas_cumprod[s].to(self.device)).view(
+			-1, 1, 1)
 
 		# [b, n_res]
 		noise_pred_trans = ts.trans - self.model(ts, s, mask).trans
@@ -100,7 +110,6 @@ class Genie(Diffusion):
 	def loss_fn(self, tnoise, ts, s, mask):
 
 		noise_pred_trans = ts.trans - self.model(ts, s, mask).trans
-
 		trans_loss = rmsd(
 			noise_pred_trans,
 			tnoise.trans,

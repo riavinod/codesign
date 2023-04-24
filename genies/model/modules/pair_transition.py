@@ -17,8 +17,8 @@
 import torch
 import torch.nn as nn
 
-from genie.model.modules.primitives import Linear
-from genie.utils.tensor_utils import chunk_layer
+from genies.model.modules.primitives import Linear
+from genies.utils.tensor_utils import chunk_layer
 
 
 class PairTransition(nn.Module):

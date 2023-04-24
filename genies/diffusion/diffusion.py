@@ -1,13 +1,13 @@
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 from torch.optim import Adam
 from abc import ABC, abstractmethod
-from pytorch_lightning.core import LightningModule
 
-from genie.model.model import Denoiser
+from genies.model.model import Denoiser
 
 
-class Diffusion(LightningModule, ABC):
+class Diffusion(nn.Module, ABC):
 
 	def __init__(self, config):
 		super(Diffusion, self).__init__()
@@ -72,7 +72,7 @@ class Diffusion(LightningModule, ABC):
 			ts_seq.append(ts)
 		return ts_seq
 
-	def training_step(self, batch, batch_idx):
+	def training_step(self, batch):
 		'''
 		Training iteration.
 
@@ -90,7 +90,6 @@ class Diffusion(LightningModule, ABC):
 		s = self.sample_timesteps(t0.shape[0])
 		ts, tnoise = self.q(t0, s, mask)
 		loss = self.loss_fn(tnoise, ts, s, mask)
-		self.log('train_loss', loss, on_step=True, on_epoch=True)
 		return loss
 
 	def configure_optimizers(self):

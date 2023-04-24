@@ -1,10 +1,10 @@
 import torch
 from torch import nn
 
-from genie.model.single_feature_net import SingleFeatureNet
-from genie.model.pair_feature_net import PairFeatureNet
-from genie.model.pair_transform_net import PairTransformNet
-from genie.model.structure_net import StructureNet
+from genies.model.single_feature_net import SingleFeatureNet
+from genies.model.pair_feature_net import PairFeatureNet
+from genies.model.pair_transform_net import PairTransformNet
+from genies.model.structure_net import StructureNet
 
 
 class Denoiser(nn.Module):

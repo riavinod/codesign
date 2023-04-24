@@ -3,7 +3,6 @@ import os
 int_or_none = lambda x: int(x) if x is not None else None
 str_list_or_none = lambda x: x.strip().split(',') if x is not None else None
 int_list_or_none = lambda x: int(x.strip().split(',')) if x is not None else None
-eval_if_str = lambda x: literal_eval(x) if isinstance(x, str) else x
 
 class Config:
 

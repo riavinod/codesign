@@ -1,6 +1,6 @@
 import torch
 
-from genie.utils.geo_utils import distance, dihedral
+from genies.utils.geo_utils import distance, dihedral
 
 
 def get_template_fn(template):

@@ -17,8 +17,8 @@
 import torch
 from torch import nn
 
-from genie.model.modules.primitives import Linear
-from genie.utils.affine_utils import T, quat_to_rot 
+from genies.model.modules.primitives import Linear
+from genies.utils.affine_utils import T, quat_to_rot
 
 
 class BackboneUpdate(nn.Module):
