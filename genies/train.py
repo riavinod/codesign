@@ -18,7 +18,7 @@ from genies.diffusion.genie import Genies
 def main(args):
 
 	# configuration
-	# config = Config('/home/kevyan/src/genies/example_configuration')
+	config = Config('/home/kevyan/src/genies/example_configuration')
 	args.world_size = args.gpus * args.nodes
 	if args.aml:
 		pass
@@ -42,8 +42,6 @@ def train(gpu, args):
 		rank=rank)
 	torch.cuda.set_device(gpu + args.offset)
 	device = torch.device('cuda:' + str(gpu + args.offset))
-	# TODO: move data and update config
-	# TODO: get sequences
 	dm = SCOPeDataModule(**config.io, batch_size=config.training['batch_size'])
 	sampler = DistributedSampler(dm.dataset, num_replicas=args.world_size, rank=rank, shuffle=True, seed=0)
 	dl = DataLoader(dm.dataset, batch_size=config.training['batch_size'], sampler=sampler, num_workers=1)
@@ -64,30 +62,41 @@ def train(gpu, args):
 	model = DDP(model)
 	for epoch in range(epochs):
 		start_time = datetime.now()
-		rloss = 0
+		r_str_loss = 0
+		r_seq_loss = 0
+		r_n_corr = 0
 		sampler.set_epoch(epoch)
 		for i, batch in enumerate(dl):
 			optimizer.zero_grad()
 			with torch.cuda.amp.autocast(enabled=args.amp):
 				batch = [b.to(device) for b in batch]
 				loss = model.module.training_step(batch)
+			str_loss = loss['trans_loss']
+			seq_loss = loss['seq_loss']
+			n_corrupted = loss['n_corr']
+			loss = config.training['w_seq'] * seq_loss + (1 - config.training['w_seq']) * str_loss
 			scaler.scale(loss).backward()
 			scaler.step(optimizer)
 			scaler.update()
-			dist.reduce(loss, 0, op=dist.ReduceOp.SUM)
-			rloss += loss.detach().cpu() / args.world_size
+			scaled_seq_loss = seq_loss * n_corrupted
+			dist.reduce(scaled_seq_loss, 0, op=dist.ReduceOp.SUM)
+			dist.reduce(str_loss, 0, op=dist.ReduceOp.SUM)
+			dist.reduce(n_corrupted, 0, op=dist.ReduceOp.SUM)
+			r_seq_loss += scaled_seq_loss.detach().cpu().item()
+			r_str_loss += str_loss.detach().cpu().item() / args.world_size
+			r_n_corr += n_corrupted.detach().cpu().item()
 			if rank == 0:
-				print('\rEpoch %d of %d Step %d of %d loss = %.4f'
-					  % (epoch + 1, epochs, i + 1, len(dl), rloss / (i + 1)),
+				print('\rEpoch %d of %d Step %d of %d str loss = %.4f seq loss = %.4f'
+					  % (epoch + 1, epochs, i + 1, len(dl), r_str_loss / (i + 1), r_seq_loss / r_n_corr),
 					  end='')
 		if rank == 0:
 			print()
 			print('Training complete in ' + str(datetime.now() - start_time))
 			with open(out_dir + 'metrics.csv', 'a') as f:
-				f.write(','.join([str(epoch), str(rloss) / (i + 1)]))
+				f.write(','.join([str(epoch), str(r_str_loss / (i + 1)), str(r_seq_loss / r_n_corr)]))
 				f.write('\n')
 			if (epoch + 1) % config.training['checkpoint_every_n_epoch'] == 0:
-				ckpt_fpath = out_dir + 'checkpoint%d.tar' % epoch + 1
+				ckpt_fpath = out_dir + 'checkpoint%d.tar' % (epoch + 1)
 				torch.save({
 					'model_state_dict': model.state_dict(),
 					'optimizer_state_dict': optimizer.state_dict(),
@@ -98,6 +107,8 @@ def train(gpu, args):
 
 	# warmup
 	# sequences
+	# restart from checkpoint
+	# make a new private repo
 
 if __name__ == '__main__':
 

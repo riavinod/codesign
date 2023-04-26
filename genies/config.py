@@ -37,6 +37,7 @@ class Config:
 			# single feature network
 			'c_pos_emb':                      int(config.get('positionalEmbeddingDimension',            128)),
 			'c_timestep_emb':                 int(config.get('timestepEmbeddingDimension',              128)),
+			'c_aa_emb': 					  int(config.get('aaEmbeddingDimension',					128)),
 
 			# pair feature network
 			'relpos_k':                       int(config.get('relativePositionK',                       32)),
@@ -71,6 +72,7 @@ class Config:
 			'batch_size':               int(config.get('batchSize',              32)),
 			'log_every_n_step':         int(config.get('logEverySteps',          1000)),
 			'checkpoint_every_n_epoch': int(config.get('checkpointEveryEpoches', 500)),
+			'w_seq':					float(config.get('seqWeight', 			 0.5))
 		}
 
 		self.optimization = {

@@ -2,7 +2,7 @@ import torch
 
 from genies.diffusion.diffusion import Diffusion
 from genies.diffusion.schedule import get_betas
-from genies.utils.loss import rmsd
+from genies.utils.loss import rmsd, mask_ce
 from genies.utils.affine_utils import T
 from genies.utils.geo_utils import compute_frenet_frames
 
@@ -107,13 +107,14 @@ class Genies(Diffusion):
 
 			return T(rots.detach(), trans.detach())
 
-	def loss_fn(self, tnoise, ts, s, mask):
 
-		noise_pred_trans = ts.trans - self.model(ts, s, mask).trans
+	def loss_fn(self, tnoise, tgt, ts, src, s, mask):
+		frames, logits = self.model(ts, src, s, mask)
+		noise_pred_trans = ts.trans - frames.trans
 		trans_loss = rmsd(
 			noise_pred_trans,
 			tnoise.trans,
 			mask
 		)
-
-		return trans_loss
+		seq_loss, n_corr = mask_ce(logits, tgt, src)
+		return {'trans_loss': trans_loss, 'seq_loss': seq_loss, 'n_corr': n_corr}

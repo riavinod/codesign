@@ -3,6 +3,9 @@ from torch import nn
 
 from genies.utils.encoding import sinusoidal_encoding
 
+from sequence_models.constants import PROTEIN_ALPHABET, PAD
+
+pad_idx = PROTEIN_ALPHABET.index(PAD)
 
 class SingleFeatureNet(nn.Module):
 
@@ -10,7 +13,8 @@ class SingleFeatureNet(nn.Module):
 		c_s,
 		n_timestep,
 		c_pos_emb,
-		c_timestep_emb
+		c_timestep_emb,
+		c_aa_emb
 	):
 		super(SingleFeatureNet, self).__init__()
 
@@ -18,10 +22,11 @@ class SingleFeatureNet(nn.Module):
 		self.n_timestep = n_timestep
 		self.c_pos_emb = c_pos_emb
 		self.c_timestep_emb = c_timestep_emb
+		self.c_aa_emb = c_aa_emb
+		self.linear = nn.Linear(self.c_pos_emb + self.c_timestep_emb + c_aa_emb, self.c_s)
+		self.aa_emb = nn.Embedding(len(PROTEIN_ALPHABET), c_aa_emb, padding_idx=pad_idx)
 
-		self.linear = nn.Linear(self.c_pos_emb + self.c_timestep_emb, self.c_s)
-
-	def forward(self, ts, timesteps, mask):
+	def forward(self, ts, src, timesteps, mask):
 		# s: [b]
 
 		b, max_n_res, device = ts.shape[0], ts.shape[1], timesteps.device
@@ -36,7 +41,10 @@ class SingleFeatureNet(nn.Module):
 		timestep_emb = timestep_emb.repeat(1, max_n_res, 1)
 		timestep_emb = timestep_emb * mask.unsqueeze(-1)
 
+		src_emb = self.aa_emb(src)
+
 		return self.linear(torch.cat([
 			pos_emb,
-			timestep_emb
+			timestep_emb,
+			src_emb
 		], dim=-1))

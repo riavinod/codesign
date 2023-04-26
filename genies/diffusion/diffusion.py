@@ -57,7 +57,7 @@ class Diffusion(nn.Module, ABC):
 		raise NotImplemented
 
 	@abstractmethod
-	def loss_fn(self, tnoise, ts, s):
+	def loss_fn(self, tnoise, tgt, ts, src, s):
 		raise NotImplemented
 
 	def p_sample_loop(self, mask, verbose=True):
@@ -78,7 +78,6 @@ class Diffusion(nn.Module, ABC):
 
 		Input:
 			batch     - coordinates from data pipeline (shape: b x (n_res * 3))
-			batch_idx - batch index (shape: b)
 
 		Output: Either a single loss value or a dictionary of losses, containing
 			one key as 'loss' (loss value for optimization)
@@ -86,10 +85,13 @@ class Diffusion(nn.Module, ABC):
 		if not self.setup:
 			self.setup_schedule()
 			self.setup = True
-		t0, mask = self.transform(batch)
+		coords, tgt, src, mask = batch
+		t0, mask = self.transform((coords, mask))
 		s = self.sample_timesteps(t0.shape[0])
 		ts, tnoise = self.q(t0, s, mask)
-		loss = self.loss_fn(tnoise, ts, s, mask)
+		src = src.long()
+		tgt = tgt.long()
+		loss = self.loss_fn(tnoise, tgt, ts, src, s, mask)
 		return loss
 
 	def configure_optimizers(self):

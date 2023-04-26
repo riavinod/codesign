@@ -37,7 +37,8 @@ class SCOPeDataModule(object):
 					file.write(filepath + '\n')
 
 		# create dataset
-		self.dataset = SCOPeDataset(filepaths, self.max_n_res, self.min_n_res)
+		fasta_fpath = os.path.join(self.data_dir, 'astral-scopedom-seqres-gd-sel-gs-bib-40-2.08.fa')
+		self.dataset = SCOPeDataset(filepaths, fasta_fpath, self.max_n_res, self.min_n_res)
 		print(f'Number of samples: {len(filepaths)}')
 
 	def train_dataloader(self):

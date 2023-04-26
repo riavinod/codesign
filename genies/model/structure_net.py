@@ -85,4 +85,4 @@ class StructureNet(nn.Module):
 	def forward(self, s, p, t, mask):
 		for block_idx in range(self.n_structure_block):
 			s, p, t, mask = self.net((s, p, t, mask))
-		return t
+		return t, s

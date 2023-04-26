@@ -6,12 +6,14 @@ from genies.model.pair_feature_net import PairFeatureNet
 from genies.model.pair_transform_net import PairTransformNet
 from genies.model.structure_net import StructureNet
 
+from sequence_models.constants import PROTEIN_ALPHABET
+
 
 class Denoiser(nn.Module):
 
 	def __init__(self,
 		c_s, c_p, n_timestep,
-		c_pos_emb, c_timestep_emb,
+		c_pos_emb, c_timestep_emb, c_aa_emb,
 		relpos_k, template_type,
 		n_pair_transform_layer, include_mul_update, include_tri_att,
 		c_hidden_mul, c_hidden_tri_att, n_head_tri, tri_dropout, pair_transition_n,
@@ -25,7 +27,8 @@ class Denoiser(nn.Module):
 			c_s,
 			n_timestep,
 			c_pos_emb,
-			c_timestep_emb
+			c_timestep_emb,
+			c_aa_emb
 		)
 		
 		self.pair_feature_net = PairFeatureNet(
@@ -61,11 +64,14 @@ class Denoiser(nn.Module):
 			structure_transition_dropout
 		)
 
-	def forward(self, ts, timesteps, mask):
+		self.sequence_decoder = nn.Linear(c_s, len(PROTEIN_ALPHABET))
+
+	def forward(self, ts, src, timesteps, mask):
 		p_mask = mask.unsqueeze(1) * mask.unsqueeze(2)
-		s = self.single_feature_net(ts, timesteps, mask)
+		s = self.single_feature_net(ts, src, timesteps, mask)
 		p = self.pair_feature_net(s, ts, p_mask)
 		if self.pair_transform_net is not None:
 			p = self.pair_transform_net(p, p_mask)
-		ts = self.structure_net(s, p, ts, mask)
-		return ts
+		ts, s = self.structure_net(s, p, ts, mask)
+		seq_logits = self.sequence_decoder(s)
+		return ts, seq_logits
