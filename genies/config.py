@@ -13,11 +13,11 @@ class Config:
 	def _create_config(self, config):
 
 		self.io = {
-			'name':                             config.get('name',               None),
+			'name':                             config.get('name',               ''),
 			'max_n_res':            int_or_none(config.get('maximumNumResidues', None)),
 			'min_n_res':            int_or_none(config.get('minimumNumResidues', None)),
-			'log_dir':                          config.get('logDirectory',       'runs'),
-			'data_dir':                         config.get('dataDirectory',      'data'),
+			'log_dir':                          config.get('logDirectory',       os.getenv('AMLT_OUTPUT_DIR', 'runs')),
+			'data_dir':                         config.get('dataDirectory',      os.path.join(os.getenv('AMLT_DATA_DIR', 'data'), 'genies', '')),
 			'dataset_names':   str_list_or_none(config.get('datasetNames',       'scope')),
 			'dataset_size':         int_or_none(config.get('datasetSize',        None)),
 			'dataset_classes': str_list_or_none(config.get('datasetClasses',     None))

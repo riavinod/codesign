@@ -12,8 +12,8 @@ class Genies(Diffusion):
 	def __init__(self, config):
 		super(Genies, self).__init__(config)
 		self.device = torch.device('cpu')
-		self.setup_schedule()
-		self.setup = True
+		# self.setup_schedule()
+		# self.setup = True
 
 	def to(self, *args, **kwargs):
 		super(Genies, self).to(*args, **kwargs)

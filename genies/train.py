@@ -18,7 +18,7 @@ from genies.diffusion.genie import Genies
 def main(args):
 
 	# configuration
-	config = Config('/home/kevyan/src/genies/example_configuration')
+	# config = Config('/home/kevyan/src/genies/example_configuration')
 	args.world_size = args.gpus * args.nodes
 	if args.aml:
 		pass
@@ -48,19 +48,43 @@ def train(gpu, args):
 	# model
 	model = Genies(config)
 	n_parameters = sum(p.numel() for p in model.parameters())
+	out_dir = os.path.join(config.io['log_dir'], config.io['name'], '')
 	if rank == 0:
 		print('%d model parameters' % n_parameters)
-		out_dir = os.path.join(config.io['log_dir'], config.io['name']) + '/'
 		config_as_dict = {'io': config.io, 'training': config.training, 'diffusion': config.diffusion,
 			'model': config.model, 'optimization': config.optimization}
 		with open(out_dir + 'config.json', 'w') as f:
 			json.dump(config_as_dict, f)
 	epochs = config.training['n_epoch']
-	optimizer = model.configure_optimizers()
 	model.to(device)
+	optimizer = model.configure_optimizers()
 	scaler = GradScaler()
+	outputs = os.listdir(out_dir)
+	if len(outputs) > 0:
+		last_epoch = 0
+		for output in outputs:
+			if 'checkpoint' in output:
+				epoch = int(output.split('checkpoint')[-1][:-4])
+				if epoch > last_epoch:
+					args.state_dict = out_dir + output
+					last_epoch = epoch
+	if args.state_dict is not None:
+		print('Loading weights from ' + args.state_dict + '...')
+		sd = torch.load(args.state_dict, map_location=device)
+		msd = sd['model_state_dict']
+		msd = {k.split('module.')[1]: v for k, v in msd.items()}
+		model.load_state_dict(msd)
+		optimizer.load_state_dict(sd['optimizer_state_dict'])
+		# https://github.com/pytorch/pytorch/issues/80809
+		optimizer.param_groups[0]['capturable'] = True
+		scaler.load_state_dict(sd['scaler_state_dict'])
+		initial_epoch = sd['epoch'] + 1
+	else:
+		initial_epoch = 0
+
+	model.setup_schedule()
 	model = DDP(model)
-	for epoch in range(epochs):
+	for epoch in range(initial_epoch, epochs):
 		start_time = datetime.now()
 		r_str_loss = 0
 		r_seq_loss = 0
@@ -100,6 +124,7 @@ def train(gpu, args):
 				torch.save({
 					'model_state_dict': model.state_dict(),
 					'optimizer_state_dict': optimizer.state_dict(),
+					'scaler_state_dict': scaler.state_dict(),
 					# 'scheduler_state_dict': scheduler.state_dict(),
 					'epoch': epoch,
 				}, ckpt_fpath)
